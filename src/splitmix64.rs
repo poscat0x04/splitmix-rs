@@ -4,6 +4,21 @@ use rand_core::{Error, RngCore, SeedableRng};
 
 const GOLDEN_GAMMA: u64 = 0x9e3779b97f4a7c15;
 
+/// SplitMix generator state
+///
+/// SplitMix is a splittable pseudorandom number generator (PRNG) that is quite fast.
+///
+/// Guy L. Steele, Jr., Doug Lea, and Christine H. Flood. 2014. Fast splittable pseudorandom number
+/// generators. In Proceedings of the 2014 ACM International Conference on Object Oriented Programming
+/// Systems Languages & Applications (OOPSLA '14). ACM, New York, NY, USA, 453-472.
+/// [DOI](https://doi.org/10.1145/2660193.2660195)
+///
+/// The paper describes a new algorithm SplitMix for splittable pseudorandom number generator that
+/// is quite fast: 9 64 bit arithmetic/logical operations per 64 bits generated.
+///
+/// This **should not be used for cryptographic or security applications**, because generated sequences
+/// of pseudorandom values are too predictable (the mixing functions are easily inverted, and two
+/// successive outputs suffice to reconstruct the internal state).
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct SMGen {
     seed: u64,
@@ -11,6 +26,7 @@ pub struct SMGen {
 }
 
 impl SMGen {
+    /// Split a generator into two uncorrelated generators
     pub fn split(&mut self) -> Self {
         self.seed = self.seed.wrapping_add(self.gamma);
         SMGen {
