@@ -91,7 +91,7 @@ fn mix64_variant_13(z: u64) -> u64 {
 
 fn mix_gamma(z: u64) -> u64 {
     let z = mix64_variant_13(z) | 1;
-    let n = shift_xor(z, 1).count_ones();
+    let n = shift_xor(1, z).count_ones();
     if n >= 24 {
         z
     } else {
@@ -99,10 +99,10 @@ fn mix_gamma(z: u64) -> u64 {
     }
 }
 
-fn shift_xor(w: u64, n: u64) -> u64 {
-    w ^ (w >> n)
+fn shift_xor(n: u32, w: u64) -> u64 {
+    w ^ (w.wrapping_shr(n))
 }
 
-fn shift_xor_mult(n: u64, k: u64, w: u64) -> u64 {
-    shift_xor(w, n).wrapping_mul(k)
+fn shift_xor_mult(n: u32, k: u64, w: u64) -> u64 {
+    shift_xor(n, w).wrapping_mul(k)
 }
