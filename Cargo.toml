@@ -1,8 +1,10 @@
 [package]
+authors = ["Poscat <poscat@mail.poscat.moe>"]
+description = "Fast Splittable PRNG"
+edition = "2018"
+license = "BSD-3-Clause"
 name = "splitmix"
 version = "0.1.0"
-authors = ["Poscat <poscat@mail.poscat.moe>"]
-edition = "2018"
 
 [dependencies]
 rand_core = "0.6.2"
