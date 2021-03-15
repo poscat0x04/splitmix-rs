@@ -1,6 +1,7 @@
 use rand_core::impls::fill_bytes_via_next;
 use rand_core::le::read_u64_into;
 use rand_core::{Error, RngCore, SeedableRng};
+use std::cell::UnsafeCell;
 
 const GOLDEN_GAMMA: u64 = 0x9e3779b97f4a7c15;
 
@@ -43,6 +44,7 @@ impl RngCore for SMGen {
     fn next_u32(&mut self) -> u32 {
         (self.next_u64() >> 32) as u32
     }
+
     fn next_u64(&mut self) -> u64 {
         self.seed = self.seed.wrapping_add(self.gamma);
         self.seed
@@ -67,10 +69,64 @@ impl SeedableRng for SMGen {
         SeedableRng::seed_from_u64(dst[0])
     }
 
-    fn seed_from_u64(state: u64) -> Self {
+    fn seed_from_u64(seed: u64) -> Self {
         SMGen {
-            seed: mix64(state),
-            gamma: mix_gamma(state.wrapping_add(GOLDEN_GAMMA)),
+            seed: mix64(seed),
+            gamma: mix_gamma(seed.wrapping_add(GOLDEN_GAMMA)),
+        }
+    }
+}
+
+/// A wrapper around `SMGen` that uses the `Clone` instance for splitting
+///
+/// Note that this utilizes interior mutability so `clone` will mutate the original
+/// generator state
+#[repr(transparent)]
+#[derive(Debug)]
+pub struct SMGenClone {
+    inner: UnsafeCell<SMGen>,
+}
+
+impl Clone for SMGenClone {
+    fn clone(&self) -> Self {
+        let rng = unsafe { &mut *self.inner.get() };
+        let new_rng = rng.split();
+        SMGenClone {
+            inner: UnsafeCell::new(new_rng),
+        }
+    }
+}
+
+impl RngCore for SMGenClone {
+    fn next_u32(&mut self) -> u32 {
+        self.inner.get_mut().next_u32()
+    }
+
+    fn next_u64(&mut self) -> u64 {
+        self.inner.get_mut().next_u64()
+    }
+
+    fn fill_bytes(&mut self, dest: &mut [u8]) {
+        self.inner.get_mut().fill_bytes(dest)
+    }
+
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
+        self.inner.get_mut().try_fill_bytes(dest)
+    }
+}
+
+impl SeedableRng for SMGenClone {
+    type Seed = [u8; 8];
+
+    fn from_seed(seed: Self::Seed) -> Self {
+        SMGenClone {
+            inner: UnsafeCell::new(SMGen::from_seed(seed)),
+        }
+    }
+
+    fn seed_from_u64(seed: u64) -> Self {
+        SMGenClone {
+            inner: UnsafeCell::new(SMGen::seed_from_u64(seed)),
         }
     }
 }

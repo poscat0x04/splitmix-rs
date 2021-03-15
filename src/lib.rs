@@ -2,4 +2,4 @@
 mod splitmix64;
 
 pub use rand_core::{RngCore, SeedableRng};
-pub use splitmix64::SMGen;
+pub use splitmix64::{SMGen, SMGenClone};
